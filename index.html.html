@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rolly AI Money Tracker</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome CDN for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            accent: {
+              emerald: '#10b981',
+              rose: '#f43f5e',
+              amber: '#f59e0b',
+              purple: '#a855f7',
+              cyan: '#06b6d4'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(156, 163, 175, 0.6);
+    }
+    
+    .glass-card {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased transition-colors duration-300 flex flex-col">
+
+  <!-- TOP HEADER / NAVBAR -->
+  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-40 glass-card">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Brand -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-accent-purple flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-brand-500/30">
+          <i class="fa-solid fa-robot text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">Rolly AI</h1>
+          <p class="text-xs text-slate-400 hidden sm:block">Smart Conversational Expense Ledger</p>
+        </div>
+      </div>
+
+      <!-- Controls: Wallet Switcher + Theme Toggle -->
+      <div class="flex items-center space-x-3">
+        
+        <!-- Wallet Switcher Selector -->
+        <div class="relative">
+          <select id="walletSelect" onchange="switchWallet(this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 pr-8 focus:ring-2 focus:ring-brand-500 focus:outline-none appearance-none cursor-pointer font-medium">
+            <!-- Populated dynamically -->
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+        </div>
+
+        <!-- Add Wallet Button -->
+        <button onclick="openWalletModal()" title="Add New Wallet" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition">
+          <i class="fa-solid fa-plus text-xs"></i>
+        </button>
+
+        <!-- Theme Toggle Button -->
+        <button onclick="toggleTheme()" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-amber-400 dark:text-amber-300 rounded-xl border border-slate-700 transition">
+          <i id="themeIcon" class="fa-solid fa-sun text-sm"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="bg-slate-900 border-b border-slate-800/80 sticky top-16 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex space-x-1 sm:space-x-4 overflow-x-auto py-2 scrollbar-none">
+        
+        <button onclick="setActiveTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 transition whitespace-nowrap bg-brand-600 text-white">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </button>
+
+        <button onclick="setActiveTab('chat')" id="tab-chat" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 transition whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <i class="fa-solid fa-comments"></i>
+          <span>Rolly Chat</span>
+        </button>
+
+        <button onclick="setActiveTab('ledger')" id="tab-ledger" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 transition whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <i class="fa-solid fa-receipt"></i>
+          <span>Expense Log</span>
+        </button>
+
+        <button onclick="setActiveTab('budgets')" id="tab-budgets" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 transition whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <i class="fa-solid fa-wallet"></i>
+          <span>Budgets</span>
+        </button>
+
+        <button onclick="setActiveTab('insights')" id="tab-insights" class="tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 transition whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <i class="fa-solid fa-lightbulb"></i>
+          <span>AI Insights</span>
+        </button>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+    <!-- QUICK LOG FLOATING BAR (ALWAYS ACCESSIBLE AT TOP OF VIEWS) -->
+    <div class="mb-6 bg-slate-800/90 border border-slate-700/80 rounded-2xl p-3 sm:p-4 shadow-xl glass-card">
+      <form id="quickLogForm" onsubmit="handleQuickLog(event)" class="flex flex-col sm:flex-row items-center gap-3">
+        <div class="relative w-full flex-grow">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brand-400">
+            <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+          </div>
+          <input type="text" id="quickInput" 
+            placeholder="Type entries (e.g. 547 groceries savemore, 1607 amira's milk, 185 zuss coffee)..." 
+            class="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-700 text-slate-100 placeholder-slate-400 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition" 
+            required />
+        </div>
+        <button type="submit" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-medium rounded-xl text-xs sm:text-sm shadow-md transition flex items-center justify-center space-x-2 shrink-0">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Quick Log</span>
+        </button>
+      </form>
+      <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between px-1">
+        <span><i class="fa-regular fa-lightbulb mr-1 text-amber-400"></i> Tip: Separate multiple entries with commas. Mention amounts, category or merchant!</span>
+        <span id="activeWalletLabel" class="font-semibold text-brand-400 hidden sm:inline">Active: Household</span>
+      </div>
+    </div>
+
+
+    <!-- VIEW 1: DASHBOARD -->
+    <div id="view-dashboard" class="tab-view space-y-6">
+      
+      <!-- METRIC SUMMARY CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Total Spent -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Spent</span>
+            <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
+              <i class="fa-solid fa-money-bill-wave text-base"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline">
+            <span id="metricTotalSpent" class="text-2xl sm:text-3xl font-extrabold text-slate-100">₱0.00</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">In selected active wallet</p>
+        </div>
+
+        <!-- Remaining Budget -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Remaining Budget</span>
+            <div id="remainingIconBg" class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <i class="fa-solid fa-piggy-bank text-base"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline">
+            <span id="metricRemaining" class="text-2xl sm:text-3xl font-extrabold text-slate-100">₱0.00</span>
+          </div>
+          <p id="metricBudgetSub" class="text-[11px] text-slate-400 mt-1">Based on monthly targets</p>
+        </div>
+
+        <!-- Daily Average -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Average</span>
+            <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+              <i class="fa-solid fa-calendar-day text-base"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline">
+            <span id="metricDailyAvg" class="text-2xl sm:text-3xl font-extrabold text-slate-100">₱0.00</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">Per active day logged</p>
+        </div>
+
+        <!-- Top Category -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Top Spending</span>
+            <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <i class="fa-solid fa-fire text-base"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline">
+            <span id="metricTopCategory" class="text-lg sm:text-xl font-bold text-slate-100 truncate">None</span>
+          </div>
+          <p id="metricTopCatAmount" class="text-[11px] text-slate-400 mt-1">₱0.00 total</p>
+        </div>
+
+      </div>
+
+      <!-- VISUAL ANALYTICS CHARTS GRID -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Category Breakdown Donut Chart -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-chart-pie text-brand-400"></i> Category Distribution
+            </h3>
+            <span class="text-xs text-slate-400">Current Wallet</span>
+          </div>
+          <div class="relative h-64 flex items-center justify-center">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Spending Trend Bar/Line Chart -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-emerald-400"></i> Daily Spending Trend
+            </h3>
+            <span class="text-xs text-slate-400">Recent Days</span>
+          </div>
+          <div class="relative h-64 flex items-center justify-center">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RECENT TRANSACTIONS PREVIEW TABLE -->
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i> Recent Expenses
+          </h3>
+          <button onclick="setActiveTab('ledger')" class="text-xs font-semibold text-brand-400 hover:text-brand-300">
+            View All (<span id="recentCount">0</span>) &rarr;
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm text-slate-300">
+            <thead class="bg-slate-900/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700/50">
+              <tr>
+                <th class="py-2.5 px-3">Date</th>
+                <th class="py-2.5 px-3">Merchant / Item</th>
+                <th class="py-2.5 px-3">Category</th>
+                <th class="py-2.5 px-3 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardRecentTbody" class="divide-y divide-slate-700/40">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- VIEW 2: ROLLY AI CHAT -->
+    <div id="view-chat" class="tab-view hidden space-y-4">
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col h-[680px]">
+        
+        <!-- Chat Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-700/60 mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-accent-purple flex items-center justify-center text-white font-bold text-lg">
+              <i class="fa-solid fa-robot"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-200 text-sm sm:text-base">Rolly Assistant</h3>
+              <p class="text-xs text-emerald-400 flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                Online & Tracking
+              </p>
+            </div>
+          </div>
+          <button onclick="clearChatHistory()" class="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1">
+            <i class="fa-solid fa-trash-can"></i> Clear Chat
+          </button>
+        </div>
+
+        <!-- Chat Stream Box -->
+        <div id="chatStream" class="flex-grow overflow-y-auto space-y-4 pr-2 scrollbar-thin">
+          <!-- Populated dynamically with AI / User Messages -->
+        </div>
+
+        <!-- Chat Input Bar -->
+        <form id="chatForm" onsubmit="handleChatMessage(event)" class="mt-4 pt-3 border-t border-slate-700/60 flex gap-2">
+          <input type="text" id="chatInput" 
+            placeholder="Tell Rolly: 'Spent 320 for lunch' or ask 'How much did I spend on groceries?'" 
+            class="flex-grow bg-slate-900 border border-slate-700 text-slate-200 text-xs sm:text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500" 
+            required />
+          <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-5 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2">
+            <span>Send</span>
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+
+    <!-- VIEW 3: FULL EXPENSE LEDGER -->
+    <div id="view-ledger" class="tab-view hidden space-y-4">
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+        
+        <!-- Ledger Action Bar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+          <div>
+            <h3 class="text-lg font-bold text-slate-200">Expense Ledger</h3>
+            <p class="text-xs text-slate-400">View, search, edit, and export all logged transactions</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Search Input -->
+            <div class="relative flex-grow sm:flex-grow-0">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+              <input type="text" id="ledgerSearch" oninput="renderLedgerTable()" placeholder="Search merchant/item..." class="pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-48" />
+            </div>
+
+            <!-- Category Filter -->
+            <select id="ledgerCategoryFilter" onchange="renderLedgerTable()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="ALL">All Categories</option>
+              <!-- Options injected -->
+            </select>
+
+            <!-- Export CSV -->
+            <button onclick="exportToCSV()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-file-csv"></i>
+              <span>Export CSV</span>
+            </button>
+
+            <!-- Add Expense Manual Modal Trigger -->
+            <button onclick="openManualExpenseModal()" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Item</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Ledger Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm text-slate-300">
+            <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-3">Date</th>
+                <th class="py-3 px-3">Merchant / Item</th>
+                <th class="py-3 px-3">Category</th>
+                <th class="py-3 px-3 text-right">Amount (PHP)</th>
+                <th class="py-3 px-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerTbody" class="divide-y divide-slate-700/50">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="emptyLedgerNotice" class="hidden text-center py-12 text-slate-400 text-sm">
+          <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-600"></i>
+          <p>No expenses found in this wallet matching your search filter.</p>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- VIEW 4: BUDGETS & WALLETS -->
+    <div id="view-budgets" class="tab-view hidden space-y-6">
+      
+      <!-- Wallet Management Header -->
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-bold text-slate-200">Active Wallets</h3>
+            <p class="text-xs text-slate-400">Switch context between personal, household, or special funds</p>
+          </div>
+          <button onclick="openWalletModal()" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-xl transition">
+            + New Wallet
+          </button>
+        </div>
+
+        <div id="walletsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Category Budget Caps -->
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-bold text-slate-200">Category Budgets & Limits</h3>
+            <p class="text-xs text-slate-400">Set monthly caps to monitor spending alerts in real-time</p>
+          </div>
+        </div>
+
+        <div id="budgetCategoryList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- VIEW 5: AI INSIGHTS & ROASTS -->
+    <div id="view-insights" class="tab-view hidden space-y-6">
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-sm">
+        
+        <div class="flex items-center space-x-3 mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white text-2xl shadow-lg">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-200">Rolly AI Spending Commentary</h3>
+            <p class="text-xs text-slate-400">Automated financial breakdown & playful reality checks</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Roast & Commentary Card -->
+          <div class="lg:col-span-2 bg-slate-900/80 border border-slate-700/70 rounded-2xl p-5 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-fire-flame-curved"></i> Rolly's Reality Check
+              </span>
+              <button onclick="refreshInsights()" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh
+              </button>
+            </div>
+            
+            <p id="aiRoastText" class="text-slate-200 text-sm sm:text-base leading-relaxed italic font-medium">
+              "Analyzing your latest purchases..."
+            </p>
+
+            <div class="mt-6 pt-4 border-t border-slate-800 grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <span class="text-slate-400 block">Top Spend Area</span>
+                <span id="insightTopArea" class="font-bold text-slate-200 text-sm">-</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block">Health Score</span>
+                <span id="insightHealthScore" class="font-bold text-emerald-400 text-sm">85/100</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actionable Tips -->
+          <div class="bg-slate-900/80 border border-slate-700/70 rounded-2xl p-5 space-y-3">
+            <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-bullseye text-brand-400"></i> Savings Plan
+            </h4>
+            <ul id="aiTipsList" class="space-y-2.5 text-xs text-slate-300">
+              <!-- Rendered dynamically -->
+            </ul>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+
+  <!-- MODAL: MANUAL ADD / EDIT EXPENSE -->
+  <div id="expenseModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="expenseModalTitle" class="text-base font-bold text-slate-100">Add New Expense</h3>
+        <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-slate-200 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="expenseForm" onsubmit="saveExpenseForm(event)" class="space-y-4">
+        <input type="hidden" id="modalExpenseId" value="">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Merchant / Item Description</label>
+          <input type="text" id="modalItem" required placeholder="e.g., Savemore Groceries" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Amount (PHP ₱)</label>
+            <input type="number" step="0.01" id="modalAmount" required placeholder="547.00" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+            <select id="modalCategory" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Date</label>
+          <input type="date" id="modalDate" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="pt-2 flex justify-end space-x-2">
+          <button type="button" onclick="closeExpenseModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- MODAL: ADD NEW WALLET -->
+  <div id="walletModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-100">Create New Wallet</h3>
+        <button onclick="closeWalletModal()" class="text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="saveNewWallet(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Wallet Name</label>
+          <input type="text" id="newWalletName" required placeholder="e.g., Baby Essentials, Vacation Fund" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Monthly Spending Target (PHP)</label>
+          <input type="number" id="newWalletBudget" required placeholder="15000" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="pt-2 flex justify-end space-x-2">
+          <button type="button" onclick="closeWalletModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold">Create Wallet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- APPLICATION JAVASCRIPT LOGIC -->
+  <script>
+    /* ==========================================================
+       1. DATA STRUCTURES & INITIAL CONSTANTS
+       ========================================================== */
+    const CATEGORIES = [
+      { id: 'Groceries', name: 'Groceries', icon: 'fa-basket-shopping', color: '#10b981' },
+      { id: 'Baby & Kids', name: 'Baby & Kids', icon: 'fa-baby', color: '#ec4899' },
+      { id: 'Food & Dining', name: 'Food & Dining', icon: 'fa-utensils', color: '#f59e0b' },
+      { id: 'Transportation', name: 'Transportation', icon: 'fa-bus', color: '#3b82f6' },
+      { id: 'Utilities', name: 'Utilities', icon: 'fa-bolt', color: '#8b5cf6' },
+      { id: 'Shopping', name: 'Shopping', icon: 'fa-bag-shopping', color: '#06b6d4' },
+      { id: 'Entertainment', name: 'Entertainment', icon: 'fa-film', color: '#f43f5e' },
+      { id: 'Miscellaneous', name: 'Miscellaneous', icon: 'fa-box', color: '#64748b' }
+    ];
+
+    const DEFAULT_WALLETS = [
+      { id: 'wallet_1', name: 'Household', budget: 15000 },
+      { id: 'wallet_2', name: 'Baby Essentials', budget: 8000 },
+      { id: 'wallet_3', name: 'Personal Allowance', budget: 5000 }
+    ];
+
+    const INITIAL_EXPENSES = [
+      { id: 'exp_1', walletId: 'wallet_1', item: "Savemore Groceries", amount: 547, category: "Groceries", date: getTodayISO() },
+      { id: 'exp_2', walletId: 'wallet_1', item: "Amira's Milk", amount: 1607, category: "Baby & Kids", date: getTodayISO() },
+      { id: 'exp_3', walletId: 'wallet_1', item: "Zus Coffee", amount: 185, category: "Food & Dining", date: getTodayISO() },
+      { id: 'exp_4', walletId: 'wallet_1', item: "Belgian Waffle", amount: 75, category: "Food & Dining", date: getTodayISO() }
+    ];
+
+    const DEFAULT_CATEGORY_BUDGETS = {
+      'Groceries': 6000,
+      'Baby & Kids': 4000,
+      'Food & Dining': 3000,
+      'Transportation': 1500,
+      'Utilities': 2500,
+      'Shopping': 2000,
+      'Entertainment': 1000,
+      'Miscellaneous': 1000
+    };
+
+    // Global State Variables
+    let wallets = [];
+    let expenses = [];
+    let categoryBudgets = {};
+    let activeWalletId = 'wallet_1';
+    let chatHistory = [];
+    let activeTab = 'dashboard';
+
+    // Chart Instances
+    let categoryChartInstance = null;
+    let trendChartInstance = null;
+
+    /* ==========================================================
+       2. INITIALIZATION & LOCAL STORAGE
+       ========================================================== */
+    window.onload = function() {
+      loadLocalStorage();
+      populateDropdowns();
+      setActiveTab('dashboard');
+      initChatIfEmpty();
+      updateAllViews();
+    };
+
+    function loadLocalStorage() {
+      // Wallets
+      const storedWallets = localStorage.getItem('rolly_wallets');
+      if (storedWallets) {
+        wallets = JSON.parse(storedWallets);
+      } else {
+        wallets = DEFAULT_WALLETS;
+        localStorage.setItem('rolly_wallets', JSON.stringify(wallets));
+      }
+
+      // Active Wallet
+      const storedActive = localStorage.getItem('rolly_active_wallet');
+      if (storedActive && wallets.some(w => w.id === storedActive)) {
+        activeWalletId = storedActive;
+      } else if (wallets.length > 0) {
+        activeWalletId = wallets[0].id;
+      }
+
+      // Expenses
+      const storedExpenses = localStorage.getItem('rolly_expenses');
+      if (storedExpenses) {
+        expenses = JSON.parse(storedExpenses);
+      } else {
+        expenses = INITIAL_EXPENSES;
+        localStorage.setItem('rolly_expenses', JSON.stringify(expenses));
+      }
+
+      // Category Budgets
+      const storedBudgets = localStorage.getItem('rolly_category_budgets');
+      if (storedBudgets) {
+        categoryBudgets = JSON.parse(storedBudgets);
+      } else {
+        categoryBudgets = DEFAULT_CATEGORY_BUDGETS;
+        localStorage.setItem('rolly_category_budgets', JSON.stringify(categoryBudgets));
+      }
+
+      // Chat History
+      const storedChat = localStorage.getItem('rolly_chat_history');
+      if (storedChat) {
+        chatHistory = JSON.parse(storedChat);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem('rolly_wallets', JSON.stringify(wallets));
+      localStorage.setItem('rolly_expenses', JSON.stringify(expenses));
+      localStorage.setItem('rolly_category_budgets', JSON.stringify(categoryBudgets));
+      localStorage.setItem('rolly_active_wallet', activeWalletId);
+      localStorage.setItem('rolly_chat_history', JSON.stringify(chatHistory));
+    }
+
+    /* ==========================================================
+       3. NAVIGATION & UI TABS
+       ========================================================== */
+    function setActiveTab(tabId) {
+      activeTab = tabId;
+
+      // Update Tab Buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-brand-600', 'text-white');
+        btn.classList.add('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-800');
+      });
+
+      const activeBtn = document.getElementById(`tab-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-800');
+        activeBtn.classList.add('bg-brand-600', 'text-white');
+      }
+
+      // Hide all views
+      document.querySelectorAll('.tab-view').forEach(view => {
+        view.classList.add('hidden');
+      });
+
+      // Show selected view
+      const targetView = document.getElementById(`view-${tabId}`);
+      if (targetView) {
+        targetView.classList.remove('hidden');
+      }
+
+      // Re-render specifics for views
+      if (tabId === 'dashboard') {
+        renderCharts();
+      } else if (tabId === 'chat') {
+        scrollChatToBottom();
+      } else if (tabId === 'insights') {
+        renderInsights();
+      }
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        themeIcon.className = 'fa-solid fa-moon text-sm';
+      } else {
+        html.classList.add('dark');
+        themeIcon.className = 'fa-solid fa-sun text-sm';
+      }
+    }
+
+    /* ==========================================================
+       4. WALLETS & CATEGORY DROPDOWNS
+       ========================================================== */
+    function populateDropdowns() {
+      // Wallet Selector Top Bar
+      const walletSelect = document.getElementById('walletSelect');
+      walletSelect.innerHTML = '';
+      wallets.forEach(w => {
+        const option = document.createElement('option');
+        option.value = w.id;
+        option.textContent = w.name;
+        if (w.id === activeWalletId) option.selected = true;
+        walletSelect.appendChild(option);
+      });
+
+      // Ledger Filter Categories
+      const ledgerCatSelect = document.getElementById('ledgerCategoryFilter');
+      ledgerCatSelect.innerHTML = `<option value="ALL">All Categories</option>`;
+      CATEGORIES.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        ledgerCatSelect.appendChild(opt);
+      });
+
+      // Modal Category Selector
+      const modalCatSelect = document.getElementById('modalCategory');
+      modalCatSelect.innerHTML = '';
+      CATEGORIES.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        modalCatSelect.appendChild(opt);
+      });
+    }
+
+    function switchWallet(walletId) {
+      activeWalletId = walletId;
+      saveState();
+      updateAllViews();
+    }
+
+    function openWalletModal() {
+      document.getElementById('walletModal').classList.remove('hidden');
+    }
+
+    function closeWalletModal() {
+      document.getElementById('walletModal').classList.add('hidden');
+    }
+
+    function saveNewWallet(e) {
+      e.preventDefault();
+      const name = document.getElementById('newWalletName').value.trim();
+      const budget = parseFloat(document.getElementById('newWalletBudget').value) || 0;
+
+      if (!name) return;
+
+      const newW = {
+        id: 'wallet_' + Date.now(),
+        name: name,
+        budget: budget
+      };
+
+      wallets.push(newW);
+      activeWalletId = newW.id;
+      saveState();
+      populateDropdowns();
+      closeWalletModal();
+      updateAllViews();
+
+      // Clear Form
+      document.getElementById('newWalletName').value = '';
+      document.getElementById('newWalletBudget').value = '';
+    }
+
+    /* ==========================================================
+       5. NATURAL LANGUAGE PARSER & CONVERSATIONAL LOGIC
+       ========================================================== */
+    function parseExpenseText(text) {
+      // Splits input by comma or 'and'
+      const rawEntries = text.split(/,|\band\b/i);
+      const parsedResults = [];
+
+      rawEntries.forEach(raw => {
+        const trimmed = raw.trim();
+        if (!trimmed) return;
+
+        // Regex pattern to extract digits (amount)
+        const amountMatch = trimmed.match(/(\d+[\d,]*(\.\d+)?)/);
+        if (amountMatch) {
+          const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
+          
+          // Remove amount string to get remaining description
+          let description = trimmed.replace(amountMatch[0], '').trim();
+          description = description.replace(/^for\s+|^on\s+|^at\s+/i, '').trim();
+
+          if (!description) description = "Unspecified Expense";
+
+          // Auto Category Classification
+          const cat = inferCategory(description);
+
+          parsedResults.push({
+            item: capitalizeFirstLetter(description),
+            amount: amount,
+            category: cat
+          });
+        }
+      });
+
+      return parsedResults;
+    }
+
+    function inferCategory(text) {
+      const lower = text.toLowerCase();
+      
+      if (lower.includes('grocer') || lower.includes('savemore') || lower.includes('supermarket') || lower.includes('mart') || lower.includes('rice') || lower.includes('meat')) {
+        return 'Groceries';
+      }
+      if (lower.includes('milk') || lower.includes('diaper') || lower.includes('baby') || lower.includes('amira') || lower.includes('toy')) {
+        return 'Baby & Kids';
+      }
+      if (lower.includes('coffee') || lower.includes('zuss') || lower.includes('zus') || lower.includes('waffle') || lower.includes('snack') || lower.includes('food') || lower.includes('lunch') || lower.includes('dinner') || lower.includes('resto') || lower.includes('starbucks')) {
+        return 'Food & Dining';
+      }
+      if (lower.includes('gas') || lower.includes('grab') || lower.includes('fare') || lower.includes('bus') || lower.includes('taxi') || lower.includes('toll') || lower.includes('transport')) {
+        return 'Transportation';
+      }
+      if (lower.includes('electric') || lower.includes('water') || lower.includes('wifi') || lower.includes('bill') || lower.includes('internet') || lower.includes('phone')) {
+        return 'Utilities';
+      }
+      if (lower.includes('shirt') || lower.includes('shoes') || lower.includes('clothes') || lower.includes('mall') || lower.includes('shopee') || lower.includes('lazada')) {
+        return 'Shopping';
+      }
+      if (lower.includes('movie') || lower.includes('cinema') || lower.includes('netflix') || lower.includes('game') || lower.includes('concert')) {
+        return 'Entertainment';
+      }
+
+      return 'Miscellaneous';
+    }
+
+    function handleQuickLog(e) {
+      e.preventDefault();
+      const input = document.getElementById('quickInput');
+      const val = input.value.trim();
+      if (!val) return;
+
+      const parsed = parseExpenseText(val);
+
+      if (parsed.length === 0) {
+        alert("Couldn't detect any amounts in your entry. Please specify price numbers! (e.g. 250 groceries)");
+        return;
+      }
+
+      // Append expenses to active wallet
+      parsed.forEach(item => {
+        expenses.unshift({
+          id: 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          walletId: activeWalletId,
+          item: item.item,
+          amount: item.amount,
+          category: item.category,
+          date: getTodayISO()
+        });
+      });
+
+      saveState();
+      updateAllViews();
+
+      // Trigger conversational AI log confirmation
+      addChatMessage('user', val);
+      
+      let aiReply = `Logged ${parsed.length} expense${parsed.length > 1 ? 's' : ''} to **${getActiveWallet().name}**:\n`;
+      parsed.forEach(p => {
+        aiReply += `• **${p.item}**: ₱${p.amount.toLocaleString()} (${p.category})\n`;
+      });
+
+      // Add Rolly humorous comment
+      const totalBatch = parsed.reduce((a, b) => a + b.amount, 0);
+      if (totalBatch > 2000) {
+        aiReply += `\n💸 *Whoa there! Big spender session detected (₱${totalBatch.toLocaleString()}). Make sure your wallet can take it!*`;
+      } else {
+        aiReply += `\n✨ *All set! Everything is organized in your ledger.*`;
+      }
+
+      addChatMessage('rolly', aiReply);
+
+      input.value = '';
+    }
+
+    /* ==========================================================
+       6. CHAT ASSISTANT LOGIC
+       ========================================================== */
+    function initChatIfEmpty() {
+      if (chatHistory.length === 0) {
+        chatHistory.push({
+          sender: 'rolly',
+          text: "Hey there! I'm **Rolly AI**. You can type expenses directly like *'185 coffee zus, 547 groceries savemore'* or ask me for your spending updates anytime!"
+        });
+        saveState();
+      }
+      renderChatStream();
+    }
+
+    function addChatMessage(sender, text) {
+      chatHistory.push({ sender, text });
+      saveState();
+      renderChatStream();
+    }
+
+    function renderChatStream() {
+      const chatStream = document.getElementById('chatStream');
+      chatStream.innerHTML = '';
+
+      chatHistory.forEach(msg => {
+        const isUser = msg.sender === 'user';
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+
+        const bubble = document.createElement('div');
+        bubble.className = `max-w-[85%] sm:max-w-[75%] rounded-2xl p-3.5 text-xs sm:text-sm ${
+          isUser 
+            ? 'bg-brand-600 text-white rounded-br-none' 
+            : 'bg-slate-900 border border-slate-700/80 text-slate-200 rounded-bl-none shadow-sm'
+        }`;
+
+        // Simple markdown formatted bold & bullets
+        let formattedText = msg.text
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/\n/g, '<br>');
+
+        bubble.innerHTML = formattedText;
+        msgDiv.appendChild(bubble);
+        chatStream.appendChild(msgDiv);
+      });
+
+      scrollChatToBottom();
+    }
+
+    function scrollChatToBottom() {
+      const chatStream = document.getElementById('chatStream');
+      if (chatStream) {
+        chatStream.scrollTop = chatStream.scrollHeight;
+      }
+    }
+
+    function handleChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      addChatMessage('user', text);
+      input.value = '';
+
+      // Check if user is logging expenses or asking a question
+      const parsed = parseExpenseText(text);
+
+      if (parsed.length > 0) {
+        // Logging Expense
+        parsed.forEach(item => {
+          expenses.unshift({
+            id: 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            walletId: activeWalletId,
+            item: item.item,
+            amount: item.amount,
+            category: item.category,
+            date: getTodayISO()
+          });
+        });
+        saveState();
+        updateAllViews();
+
+        let aiReply = `Recorded ${parsed.length} item(s):\n`;
+        parsed.forEach(p => {
+          aiReply += `• **${p.item}**: ₱${p.amount.toLocaleString()} (${p.category})\n`;
+        });
+        aiReply += `\nNeed to add anything else?`;
+        addChatMessage('rolly', aiReply);
+      } else {
+        // Query handling
+        respondToAIQuery(text);
+      }
+    }
+
+    function respondToAIQuery(query) {
+      const lower = query.toLowerCase();
+      const currentExpenses = getActiveExpenses();
+      const total = currentExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+      let reply = "";
+
+      if (lower.includes('total') || lower.includes('how much') || lower.includes('spent')) {
+        if (lower.includes('coffee')) {
+          const coffeeSpend = currentExpenses
+            .filter(e => e.item.toLowerCase().includes('coffee') || e.item.toLowerCase().includes('zus'))
+            .reduce((s, e) => s + e.amount, 0);
+          reply = `You've spent **₱${coffeeSpend.toLocaleString()}** on coffee so far in this wallet! ☕`;
+        } else if (lower.includes('groceries') || lower.includes('grocery')) {
+          const grocSpend = currentExpenses
+            .filter(e => e.category === 'Groceries')
+            .reduce((s, e) => s + e.amount, 0);
+          reply = `Your total Grocery bill is **₱${grocSpend.toLocaleString()}** right now.`;
+        } else {
+          reply = `Your total spending in **${getActiveWallet().name}** is **₱${total.toLocaleString()}**.`;
+        }
+      } else if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
+        reply = "Hey there! Ready to log more expenses or review your budget?";
+      } else {
+        reply = "I'm always ready! Type a line like *'350 lunch at diner'* to log a new purchase, or ask me for your spending totals!";
+      }
+
+      setTimeout(() => {
+        addChatMessage('rolly', reply);
+      }, 300);
+    }
+
+    function clearChatHistory() {
+      if (confirm("Clear chat messages?")) {
+        chatHistory = [];
+        initChatIfEmpty();
+      }
+    }
+
+    /* ==========================================================
+       7. DASHBOARD METRICS & RECENT TABLE
+       ========================================================== */
+    function updateAllViews() {
+      const activeW = getActiveWallet();
+      
+      // Update Active Wallet Label
+      document.getElementById('activeWalletLabel').textContent = `Active: ${activeW.name}`;
+
+      const activeExpenses = getActiveExpenses();
+      const totalSpent = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+      // Metrics
+      document.getElementById('metricTotalSpent').textContent = `₱${totalSpent.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      
+      const remaining = activeW.budget - totalSpent;
+      const remEl = document.getElementById('metricRemaining');
+      remEl.textContent = `₱${Math.max(0, remaining).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      
+      const remainingIconBg = document.getElementById('remainingIconBg');
+      if (remaining < 0) {
+        remEl.classList.add('text-rose-400');
+        remainingIconBg.className = 'w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center';
+      } else {
+        remEl.classList.remove('text-rose-400');
+        remainingIconBg.className = 'w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center';
+      }
+
+      document.getElementById('metricBudgetSub').textContent = `Cap: ₱${activeW.budget.toLocaleString()}`;
+
+      // Daily Average
+      const uniqueDays = new Set(activeExpenses.map(e => e.date)).size || 1;
+      const dailyAvg = totalSpent / uniqueDays;
+      document.getElementById('metricDailyAvg').textContent = `₱${dailyAvg.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+
+      // Top Category
+      const catTotals = {};
+      activeExpenses.forEach(e => {
+        catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
+      });
+
+      let topCat = 'None';
+      let topAmount = 0;
+      Object.keys(catTotals).forEach(cat => {
+        if (catTotals[cat] > topAmount) {
+          topAmount = catTotals[cat];
+          topCat = cat;
+        }
+      });
+
+      document.getElementById('metricTopCategory').textContent = topCat;
+      document.getElementById('metricTopCatAmount').textContent = `₱${topAmount.toLocaleString()} total`;
+
+      // Render Sub-Views
+      renderRecentDashboardTable();
+      renderLedgerTable();
+      renderWalletsGrid();
+      renderCategoryBudgets();
+      renderCharts();
+      renderInsights();
+    }
+
+    function renderRecentDashboardTable() {
+      const tbody = document.getElementById('dashboardRecentTbody');
+      const activeExpenses = getActiveExpenses().slice(0, 5); // top 5
+      document.getElementById('recentCount').textContent = getActiveExpenses().length;
+
+      tbody.innerHTML = '';
+      if (activeExpenses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500 italic">No recent transactions recorded</td></tr>`;
+        return;
+      }
+
+      activeExpenses.forEach(exp => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition";
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-slate-400 text-xs">${formatDisplayDate(exp.date)}</td>
+          <td class="py-2.5 px-3 font-semibold text-slate-200">${escapeHtml(exp.item)}</td>
+          <td class="py-2.5 px-3">${getCategoryBadgeHTML(exp.category)}</td>
+          <td class="py-2.5 px-3 text-right font-bold text-slate-100">₱${exp.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ==========================================================
+       8. CHART.JS VISUAL ANALYTICS
+       ========================================================== */
+    function renderCharts() {
+      if (activeTab !== 'dashboard') return;
+
+      const activeExpenses = getActiveExpenses();
+
+      // Category Totals Data
+      const catData = {};
+      CATEGORIES.forEach(c => catData[c.name] = 0);
+      activeExpenses.forEach(e => {
+        catData[e.category] = (catData[e.category] || 0) + e.amount;
+      });
+
+      const catLabels = CATEGORIES.map(c => c.name);
+      const catAmounts = CATEGORIES.map(c => catData[c.name]);
+      const catColors = CATEGORIES.map(c => c.color);
+
+      // Destroy Old Chart
+      if (categoryChartInstance) categoryChartInstance.destroy();
+
+      const ctx1 = document.getElementById('categoryChart').getContext('2d');
+      categoryChartInstance = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: catLabels,
+          datasets: [{
+            data: catAmounts,
+            backgroundColor: catColors,
+            borderWidth: 2,
+            borderColor: '#1e293b'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#94a3b8', font: { size: 11 } }
+            }
+          },
+          cutout: '70%'
+        }
+      });
+
+      // Daily Trend Data (Last 7 dates)
+      const dateMap = {};
+      activeExpenses.forEach(e => {
+        dateMap[e.date] = (dateMap[e.date] || 0) + e.amount;
+      });
+
+      const sortedDates = Object.keys(dateMap).sort().slice(-7);
+      const trendAmounts = sortedDates.map(d => dateMap[d]);
+
+      if (trendChartInstance) trendChartInstance.destroy();
+
+      const ctx2 = document.getElementById('trendChart').getContext('2d');
+      trendChartInstance = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: sortedDates.map(d => formatDisplayDate(d)),
+          datasets: [{
+            label: 'Daily Spend (₱)',
+            data: trendAmounts,
+            backgroundColor: '#6366f1',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    /* ==========================================================
+       9. FULL LEDGER TABLE & CRUD
+       ========================================================== */
+    function renderLedgerTable() {
+      const tbody = document.getElementById('ledgerTbody');
+      const searchQuery = document.getElementById('ledgerSearch').value.toLowerCase();
+      const categoryFilter = document.getElementById('ledgerCategoryFilter').value;
+      const emptyNotice = document.getElementById('emptyLedgerNotice');
+
+      let filtered = getActiveExpenses();
+
+      if (categoryFilter !== 'ALL') {
+        filtered = filtered.filter(e => e.category === categoryFilter);
+      }
+
+      if (searchQuery) {
+        filtered = filtered.filter(e => 
+          e.item.toLowerCase().includes(searchQuery) || 
+          e.category.toLowerCase().includes(searchQuery)
+        );
+      }
+
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyNotice.classList.remove('hidden');
+        return;
+      } else {
+        emptyNotice.classList.add('hidden');
+      }
+
+      filtered.forEach(exp => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/50 transition";
+        tr.innerHTML = `
+          <td class="py-3 px-3 text-slate-400 text-xs">${formatDisplayDate(exp.date)}</td>
+          <td class="py-3 px-3 font-semibold text-slate-100">${escapeHtml(exp.item)}</td>
+          <td class="py-3 px-3">${getCategoryBadgeHTML(exp.category)}</td>
+          <td class="py-3 px-3 text-right font-bold text-slate-100">₱${exp.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td class="py-3 px-3 text-center space-x-2">
+            <button onclick="editExpense('${exp.id}')" class="text-slate-400 hover:text-brand-400 transition" title="Edit">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button onclick="deleteExpense('${exp.id}')" class="text-slate-400 hover:text-rose-400 transition" title="Delete">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openManualExpenseModal() {
+      document.getElementById('expenseModalTitle').textContent = "Add New Expense";
+      document.getElementById('modalExpenseId').value = "";
+      document.getElementById('modalItem').value = "";
+      document.getElementById('modalAmount').value = "";
+      document.getElementById('modalDate').value = getTodayISO();
+      document.getElementById('expenseModal').classList.remove('hidden');
+    }
+
+    function editExpense(id) {
+      const exp = expenses.find(e => e.id === id);
+      if (!exp) return;
+
+      document.getElementById('expenseModalTitle').textContent = "Edit Expense";
+      document.getElementById('modalExpenseId').value = exp.id;
+      document.getElementById('modalItem').value = exp.item;
+      document.getElementById('modalAmount').value = exp.amount;
+      document.getElementById('modalCategory').value = exp.category;
+      document.getElementById('modalDate').value = exp.date;
+
+      document.getElementById('expenseModal').classList.remove('hidden');
+    }
+
+    function closeExpenseModal() {
+      document.getElementById('expenseModal').classList.add('hidden');
+    }
+
+    function saveExpenseForm(e) {
+      e.preventDefault();
+      const id = document.getElementById('modalExpenseId').value;
+      const item = document.getElementById('modalItem').value.trim();
+      const amount = parseFloat(document.getElementById('modalAmount').value) || 0;
+      const category = document.getElementById('modalCategory').value;
+      const date = document.getElementById('modalDate').value;
+
+      if (!item || amount <= 0) return;
+
+      if (id) {
+        // Edit existing
+        const index = expenses.findIndex(e => e.id === id);
+        if (index !== -1) {
+          expenses[index] = { ...expenses[index], item, amount, category, date };
+        }
+      } else {
+        // Create new
+        expenses.unshift({
+          id: 'exp_' + Date.now(),
+          walletId: activeWalletId,
+          item,
+          amount,
+          category,
+          date
+        });
+      }
+
+      saveState();
+      closeExpenseModal();
+      updateAllViews();
+    }
+
+    function deleteExpense(id) {
+      if (confirm("Are you sure you want to delete this item?")) {
+        expenses = expenses.filter(e => e.id !== id);
+        saveState();
+        updateAllViews();
+      }
+    }
+
+    function exportToCSV() {
+      const activeExpenses = getActiveExpenses();
+      if (activeExpenses.length === 0) {
+        alert("No expenses to export!");
+        return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,Date,Item/Merchant,Category,Amount (PHP)\n";
+      activeExpenses.forEach(e => {
+        csvContent += `"${e.date}","${e.item.replace(/"/g, '""')}","${e.category}",${e.amount}\n`;
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Expenses_${getActiveWallet().name}_${getTodayISO()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    /* ==========================================================
+       10. BUDGETS & WALLETS DISPLAY
+       ========================================================== */
+    function renderWalletsGrid() {
+      const container = document.getElementById('walletsGrid');
+      container.innerHTML = '';
+
+      wallets.forEach(w => {
+        const wExpenses = expenses.filter(e => e.walletId === w.id);
+        const wSpent = wExpenses.reduce((s, e) => s + e.amount, 0);
+        const isActive = w.id === activeWalletId;
+
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-2xl border transition cursor-pointer ${
+          isActive 
+            ? 'bg-brand-600/10 border-brand-500/80 shadow-md ring-1 ring-brand-500' 
+            : 'bg-slate-900/60 border-slate-700/60 hover:border-slate-600'
+        }`;
+
+        card.onclick = () => switchWallet(w.id);
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-sm text-slate-100">${escapeHtml(w.name)}</span>
+            ${isActive ? '<span class="text-[10px] bg-brand-500 text-white font-bold px-2 py-0.5 rounded-full">Active</span>' : ''}
+          </div>
+          <p class="text-xs text-slate-400">Total Spent</p>
+          <p class="text-lg font-extrabold text-slate-100">₱${wSpent.toLocaleString()}</p>
+          <div class="mt-2 text-[11px] text-slate-400 border-t border-slate-800 pt-2 flex justify-between">
+            <span>Target Cap:</span>
+            <span class="font-semibold text-slate-300">₱${w.budget.toLocaleString()}</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function renderCategoryBudgets() {
+      const container = document.getElementById('budgetCategoryList');
+      container.innerHTML = '';
+
+      const activeExpenses = getActiveExpenses();
+
+      CATEGORIES.forEach(cat => {
+        const spent = activeExpenses
+          .filter(e => e.category === cat.id)
+          .reduce((s, e) => s + e.amount, 0);
+
+        const limit = categoryBudgets[cat.id] || 2000;
+        const percent = Math.min(100, Math.round((spent / limit) * 100));
+
+        let progressColor = 'bg-brand-500';
+        if (percent >= 100) progressColor = 'bg-rose-500';
+        else if (percent >= 80) progressColor = 'bg-amber-500';
+
+        const div = document.createElement('div');
+        div.className = "bg-slate-900/80 border border-slate-700/60 rounded-xl p-4 shadow-sm";
+        div.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid ${cat.icon} text-sm" style="color: ${cat.color}"></i>
+              <span class="font-semibold text-xs sm:text-sm text-slate-200">${cat.name}</span>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-100">₱${spent.toLocaleString()}</span>
+              <span class="text-[10px] text-slate-400"> / ₱${limit.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+            <div class="${progressColor} h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+          </div>
+
+          <div class="flex items-center justify-between mt-2 text-[10px] text-slate-400">
+            <span>${percent}% used</span>
+            <button onclick="promptEditBudget('${cat.id}')" class="text-brand-400 hover:text-brand-300">
+              Set Target
+            </button>
+          </div>
+        `;
+
+        container.appendChild(div);
+      });
+    }
+
+    function promptEditBudget(catId) {
+      const current = categoryBudgets[catId] || 2000;
+      const val = prompt(`Set target spending limit for ${catId} (PHP):`, current);
+      if (val !== null) {
+        const num = parseFloat(val);
+        if (!isNaN(num) && num > 0) {
+          categoryBudgets[catId] = num;
+          saveState();
+          renderCategoryBudgets();
+        }
+      }
+    }
+
+    /* ==========================================================
+       11. AI COMMENTARY & INSIGHTS
+       ========================================================== */
+    function renderInsights() {
+      const activeExpenses = getActiveExpenses();
+      const totalSpent = activeExpenses.reduce((s, e) => s + e.amount, 0);
+
+      const roastEl = document.getElementById('aiRoastText');
+      const topAreaEl = document.getElementById('insightTopArea');
+      const healthEl = document.getElementById('insightHealthScore');
+      const tipsList = document.getElementById('aiTipsList');
+
+      if (activeExpenses.length === 0) {
+        roastEl.textContent = '"No transactions logged in this wallet yet. Rolly is waiting patiently!"';
+        topAreaEl.textContent = "N/A";
+        healthEl.textContent = "100/100";
+        tipsList.innerHTML = `<li>Log your daily coffee or groceries to start generating smart insights!</li>`;
+        return;
+      }
+
+      // Find top spend
+      const catTotals = {};
+      activeExpenses.forEach(e => catTotals[e.category] = (catTotals[e.category] || 0) + e.amount);
+      
+      let topCat = '';
+      let topAmt = 0;
+      Object.keys(catTotals).forEach(c => {
+        if (catTotals[c] > topAmt) {
+          topAmt = catTotals[c];
+          topCat = c;
+        }
+      });
+
+      topAreaEl.textContent = `${topCat} (₱${topAmt.toLocaleString()})`;
+
+      // Dynamic Roasts / Comments
+      let roastMsg = "";
+      if (topCat === 'Food & Dining' || topCat === 'Entertainment') {
+        roastMsg = `"Look at you, gourmet foodie! 🍕 You spent ₱${topAmt.toLocaleString()} on food & snacks alone. Your coffee and treat trips are putting in real overtime!"`;
+      } else if (topCat === 'Baby & Kids') {
+        roastMsg = `"Parenting mode activated! 👶 Baby supplies are taking up the lion's share of your budget at ₱${topAmt.toLocaleString()}. Essential, but definitely keeps you on your toes!"`;
+      } else if (topCat === 'Groceries') {
+        roastMsg = `"Grocery haul champion! 🛒 ₱${topAmt.toLocaleString()} went into stocking up. Cooking at home is saving you big time compared to takeout!"`;
+      } else {
+        roastMsg = `"You've logged ₱${totalSpent.toLocaleString()} total so far. Keep an eye on your miscellaneous purchases so small expenses don't slip through!"`;
+      }
+
+      roastEl.textContent = roastMsg;
+
+      // Calculate health score
+      const activeW = getActiveWallet();
+      const pctUsed = Math.min(100, (totalSpent / activeW.budget) * 100);
+      const score = Math.max(10, Math.round(100 - (pctUsed * 0.7)));
+      
+      healthEl.textContent = `${score}/100`;
+
+      // Actionable Tips
+      tipsList.innerHTML = `
+        <li class="flex items-start space-x-2">
+          <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+          <span>Set aside a strict cap for <strong>${topCat}</strong> to avoid budget drain.</span>
+        </li>
+        <li class="flex items-start space-x-2">
+          <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+          <span>Use Quick Log commands in chat every time you step out of Savemore or cafes.</span>
+        </li>
+      `;
+    }
+
+    function refreshInsights() {
+      renderInsights();
+    }
+
+    /* ==========================================================
+       12. HELPER UTILITIES
+       ========================================================== */
+    function getActiveWallet() {
+      return wallets.find(w => w.id === activeWalletId) || wallets[0] || { id: 'default', name: 'Default', budget: 10000 };
+    }
+
+    function getActiveExpenses() {
+      return expenses.filter(e => e.walletId === activeWalletId);
+    }
+
+    function getCategoryBadgeHTML(catName) {
+      const cat = CATEGORIES.find(c => c.id === catName) || { icon: 'fa-box', color: '#64748b' };
+      return `
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-800 border border-slate-700" style="color: ${cat.color}">
+          <i class="fa-solid ${cat.icon} text-[10px]"></i>
+          <span>${catName}</span>
+        </span>
+      `;
+    }
+
+    function getTodayISO() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function formatDisplayDate(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      if (parts.length < 3) return dateStr;
+      const date = new Date(parts[0], parts[1] - 1, parts[2]);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function capitalizeFirstLetter(string) {
+      return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.innerText = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
